@@ -10,11 +10,10 @@ api_key = "jNPno6ZanVws5GIvT9RtsmWI9R5u9AZfSekYWdY06QSSQfo5Hli87mJPYO7ZJWEX"
 api_secret ="Qp9YBhPdhtxLBdrddLL3T5o0pJ4Ka4wvehteeMNEgVd9A5JD9IydrOW4bEa6Ggb5"
 
 BINANCE_AVAILABLE_TIMEFRAMES = ["1h"]
-
 BINANCE_WATCH_LIST = ["LINKUSDT", "CHZUSDT", "EOSUSDT", "ADAUSDT", "BNBUSDT", "XTZUSDT", "SOLUSDT", "ANKRUSDT", "MATICUSDT", "XMRUSDT"]
+
 def connect_binance():
     return Client(api_key, api_secret)
-
 
 
 def get_ticker_info(pair_name):

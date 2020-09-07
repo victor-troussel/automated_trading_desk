@@ -5,13 +5,7 @@ FTX_API_KEY = "I82URa0CXtNoRAZw3qpl1U3Erhu2P0k_XtKykBo2"
 FTX_API_SECRET = "PvRXtFwcoLOGcH-fzlkK7C8_4ErKk9owgu3moZxq"
 
 FTX_AVAILABLE_TIMEFRAMES = ["1h"]
-
-
 FTX_WATCH_LIST = ["TRX-PERP", "OKB-PERP", "LINK-PERP", "AMPL-PERP", "DEFI-PERP", "ALGO-PERP", "SOL-PERP", "DOT-PERP"]
-
-
-
-
 
 def connect_ftx():
     return requests.Session()

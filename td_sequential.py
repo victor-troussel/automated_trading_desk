@@ -50,5 +50,5 @@ def get_td_sequential(timeframe_id, candle_array):
         print('\033[36m' + '>> ' + str(candle_array[0]["symbol"]) + ' \'s TD sequential added for ' + timeframe_id + ' tf. \033[0m')
 
     except Exception as exception_e:
+        print ('\033[31m' + "Unable to compute td_sequential for %s timeframe " + '\033[0m' % timeframe_id)
         print(exception_e)
-

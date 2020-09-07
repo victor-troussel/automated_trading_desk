@@ -2,14 +2,16 @@
 This script aims to connect with Bitmex and to get the last 1000 candles and insert them with additional data in a database.
 """
 import bitmex, datetime, os, pytz, sys, time, warnings
+
 import anchored_vwaps as anch_vwaps
+import td_sequential as td
+import volume_analysis as vol_an
 
 import bitmex_data as bitmex_data
 import binance_data as binance_data
 import ftx_data as ftx_data
 
 import db_management as dbm
-import td_sequential as td
 warnings.filterwarnings("ignore")
 
 
@@ -25,16 +27,16 @@ if __name__ == "__main__":
         candle_array = bitmex_data.get_ticker_info(bitmex_client, "XBTUSD", timeframe_id)[0]
 
         #We work with the previous candle in order to have the full and accurate data of a candle
+        candle_array[1]["exchange"] = 'BITMEX'
         dbm.insert_candle(timeframe_id, "XBTUSD", candle_array[1])
         vwap_values = anch_vwaps.get_anch_vwap_value(timeframe_id, candle_array[1:], anch_vwaps.ANCH_VWAP_LOOKBACK_VALUES)
-        try:
-            td.get_td_sequential(timeframe_id, candle_array[1:])
-        except Exception as exception_e:
-            print ('\033[31m' + "Unable to compute td_sequential for %s timeframe " + '\033[0m' % timeframe_id)
-            print(exception_e)
-    for i in range(0, len(bitmex_data.BITMEX_AVAILABLE_TIMEFRAMES) * len(anch_vwaps.ANCH_VWAP_LOOKBACK_VALUES) + len(bitmex_data.BITMEX_AVAILABLE_TIMEFRAMES), 1):
+        td.get_td_sequential(timeframe_id, candle_array[1:])
+        vol_an.get_volume_analysis(timeframe_id, candle_array[1:])
+
+    for i in range(0, len(bitmex_data.BITMEX_AVAILABLE_TIMEFRAMES) * len(anch_vwaps.ANCH_VWAP_LOOKBACK_VALUES) + len(bitmex_data.BITMEX_AVAILABLE_TIMEFRAMES) + (len(vol_an.VOLUME_LOOKBACK_VALUES) * len(bitmex_data.BITMEX_AVAILABLE_TIMEFRAMES)), 1):
         sys.stdout.write("\033[F")
         sys.stdout.write("\033[K") 
+
     print('\033[33m' + '>> XBTUSD \'s Indicators are up-to-date \033[0m')
 
 
@@ -45,18 +47,16 @@ if __name__ == "__main__":
     for symbol_id in binance_data.BINANCE_WATCH_LIST:
         try:
             for timeframe_id in binance_data.BINANCE_AVAILABLE_TIMEFRAMES:
+
                 candle_array = binance_data.get_ticker_info(symbol_id)
                 candle_array[1]["timestamp"] = datetime.datetime.fromtimestamp(candle_array[1]["timestamp"] / 1e3)
                 dbm.insert_candle(timeframe_id, symbol_id, candle_array[1])
                 vwap_values = anch_vwaps.get_anch_vwap_value(timeframe_id, candle_array[1:], anch_vwaps.ANCH_VWAP_LOOKBACK_VALUES)
 
-                try:
-                    td.get_td_sequential(timeframe_id, candle_array[1:])
-                except Exception as exception_e:
-                    print ('\033[31m' + "Unable to compute td_sequential for %s timeframe " + '\033[0m' % timeframe_id)
-                    print(exception_e)
+                td.get_td_sequential(timeframe_id, candle_array[1:])
+                vol_an.get_volume_analysis(timeframe_id, candle_array[1:])
 
-            for i in range(0, len(binance_data.BINANCE_AVAILABLE_TIMEFRAMES) * len(anch_vwaps.ANCH_VWAP_LOOKBACK_VALUES) + len(binance_data.BINANCE_AVAILABLE_TIMEFRAMES), 1):
+            for i in range(0, (len(binance_data.BINANCE_AVAILABLE_TIMEFRAMES) * len(anch_vwaps.ANCH_VWAP_LOOKBACK_VALUES)) + len(binance_data.BINANCE_AVAILABLE_TIMEFRAMES) + (len(vol_an.VOLUME_LOOKBACK_VALUES) * len(binance_data.BINANCE_AVAILABLE_TIMEFRAMES)), 1):
                 sys.stdout.write("\033[F")
                 sys.stdout.write("\033[K") 
             print('\033[33m' + '>> ' + symbol_id + ' \'s Indicators are up-to-date \033[0m')
@@ -73,18 +73,16 @@ if __name__ == "__main__":
     for symbol_id in ftx_data.FTX_WATCH_LIST:
         try:
             for timeframe_id in ftx_data.FTX_AVAILABLE_TIMEFRAMES:
-                candle_array = ftx_data.get_ticker_info(symbol_id)
+
+                candle_array = ftx_data.get_ticker_info(symbol_id, timeframe_id)
                 candle_array[1]["timestamp"] = datetime.datetime.fromtimestamp(candle_array[1]["timestamp"] / 1e3)
                 dbm.insert_candle(timeframe_id, symbol_id, candle_array[1])
                 vwap_values = anch_vwaps.get_anch_vwap_value(timeframe_id, candle_array[1:], anch_vwaps.ANCH_VWAP_LOOKBACK_VALUES)
 
-                try:
-                    td.get_td_sequential(timeframe_id, candle_array[1:])
-                except Exception as exception_e:
-                    print ('\033[31m' + "Unable to compute td_sequential for %s timeframe " + '\033[0m' % timeframe_id)
-                    print(exception_e)
+                td.get_td_sequential(timeframe_id, candle_array[1:])
+                vol_an.get_volume_analysis(timeframe_id, candle_array[1:])
 
-            for i in range(0, len(ftx_data.FTX_AVAILABLE_TIMEFRAMES) * len(anch_vwaps.ANCH_VWAP_LOOKBACK_VALUES) + len(ftx_data.FTX_AVAILABLE_TIMEFRAMES), 1):
+            for i in range(0, len(ftx_data.FTX_AVAILABLE_TIMEFRAMES) * len(anch_vwaps.ANCH_VWAP_LOOKBACK_VALUES) + len(ftx_data.FTX_AVAILABLE_TIMEFRAMES) + (len(vol_an.VOLUME_LOOKBACK_VALUES) * len(ftx_data.FTX_AVAILABLE_TIMEFRAMES)), 1):
                 sys.stdout.write("\033[F")
                 sys.stdout.write("\033[K") 
             print('\033[33m' + '>> ' + symbol_id + ' \'s Indicators are up-to-date \033[0m')

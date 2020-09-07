@@ -4,19 +4,28 @@ from requests import Request
 FTX_API_KEY = "I82URa0CXtNoRAZw3qpl1U3Erhu2P0k_XtKykBo2"
 FTX_API_SECRET = "PvRXtFwcoLOGcH-fzlkK7C8_4ErKk9owgu3moZxq"
 
-FTX_AVAILABLE_TIMEFRAMES = ["1h"]
+FTX_AVAILABLE_TIMEFRAMES = ["15m", "1h", "4h", "1d"]
 FTX_WATCH_LIST = ["TRX-PERP", "OKB-PERP", "LINK-PERP", "AMPL-PERP", "DEFI-PERP", "ALGO-PERP", "SOL-PERP", "DOT-PERP"]
 
 def connect_ftx():
     return requests.Session()
 
 
-def get_ticker_info(symbol_id):
+def get_ticker_info(symbol_id, timeframe_id):
     requests_session = connect_ftx()
+
+    if timeframe_id == "15m":
+    	tf_sec = 15 * 60
+    elif timeframe_id == "1h":
+    	tf_sec = 60 * 60
+    elif timeframe_id == "4h":
+    	tf_sec = 60 * 60 * 4
+    elif timeframe_id == "1d":
+    	tf_sec = 60 * 60 * 24
 
 
     ts = int(time.time() * 1000)
-    request = Request('GET', 'https://ftx.com/api/markets/' + symbol_id + '/candles?resolution=3600&limit=700')
+    request = Request('GET', 'https://ftx.com/api/markets/' + symbol_id + '/candles?resolution=' + str(tf_sec)  + '&limit=700')
     prepared = request.prepare()
     signature_payload = f'{ts}{prepared.method}{prepared.path_url}'.encode()
     signature = hmac.new(FTX_API_SECRET.encode(), signature_payload, 'sha256').hexdigest()

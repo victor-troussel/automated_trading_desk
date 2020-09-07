@@ -1,8 +1,10 @@
 """
 This script aims to compute several Anchored VWAPS taking an array of bitmex candles as an input.
 """
-import bitmex, datetime, os, pytz, sys, time, warnings
+import bitmex, datetime, os, pytz, random, sys, time, warnings
 import db_management as dbm
+
+ANCH_VWAP_LOOKBACK_VALUES = [50, 75, 100, 150, 200, 400, 600]
 
 
 def get_highest_price(candle_array):
@@ -33,7 +35,7 @@ def get_sma(timeframe_id, candle_location, candle_array):
 		price_average += candle_item['high'] if candle_location == 'HIGH' else candle_item['low'] if candle_location == 'LOW' else candle_item['close']
 	sma = price_average / len(candle_array)
 	try:
-		dbm.update_candle(timeframe_id, {'sma_' + str(len(candle_array)) + '_' + candle_location : sma})
+		dbm.update_candle(timeframe_id, candle_array[0]['symbol'], {'sma_' + str(len(candle_array)) + '_' + candle_location : sma})
 	except Exception as exception_e:
 		print("Unable to insert sma for %s timeframe " % timeframe_id)
 		print(exception_e)
@@ -49,7 +51,7 @@ def get_ema(timeframe_id, candle_location, candle_array):
 	current_candle = candle_array[0]
 	current_price = current_candle['high'] if candle_location == 'HIGH' else current_candle['low'] if candle_location =='LOW' else current_candle['close'] 
 	try:
-		previous_candle = dbm.get_previous_candle(timeframe_id)
+		previous_candle = dbm.get_previous_candle(timeframe_id, current_candle['symbol'])
 	except:
 		pass
 
@@ -66,7 +68,7 @@ def get_ema(timeframe_id, candle_location, candle_array):
 	current_ema = current_price * (2 / (len(candle_array) + 1)) + previous_ema * (1 - (2 / (len(candle_array) + 1)))
 
 	try:
-		dbm.update_candle(timeframe_id, {'ema_' + str(len(candle_array)) + '_' + candle_location : current_ema})
+		dbm.update_candle(timeframe_id, current_candle['symbol'], {'ema_' + str(len(candle_array)) + '_' + candle_location : current_ema})
 	except Exception as exception_e:
 		print("Unable to insert ema for %s timeframe " % timeframe_id)
 		print(exception_e)
@@ -84,14 +86,14 @@ def get_anch_vwap_value(timeframe_id, candle_array, lookback_values):
 			an array containing the value of every anchored vwap
 	'''
 	anchored_vwap_values = []
+	console_color = "31"
 
 	for lookback_value in lookback_values:
 
-		print("Parsing candles to compute anchored VWAPS for %s period on a %s timeframe." % (lookback_value,timeframe_id))
 		current_candle = candle_array[0]
 		current_volume = current_candle['volume']
 
-		priced_averaged_volume = ((current_candle['low'] + current_candle['high'] +current_candle['close']) / 3) * current_volume
+		priced_averaged_volume = ((current_candle['low'] + current_candle['high'] + current_candle['close']) / 3) * current_volume
 		current_highest = get_highest_price(candle_array[:lookback_value])
 		current_lowest = get_lowest_price(candle_array[:lookback_value])
 
@@ -106,7 +108,7 @@ def get_anch_vwap_value(timeframe_id, candle_array, lookback_values):
 		else : we start from scratch
 		'''
 		try:
-			previous_candle = dbm.get_previous_candle(timeframe_id)
+			previous_candle = dbm.get_previous_candle(timeframe_id, current_candle['symbol'])
 			if not previous_candle['volume_sum_high' + str(lookback_value)]:
 				previous_candle = candle_array[1]
 				previous_candle['volume_sum_high' + str(lookback_value)] = previous_candle['volume']
@@ -149,21 +151,23 @@ def get_anch_vwap_value(timeframe_id, candle_array, lookback_values):
 		INSERTING ANCHORED_VWAPS RELATED VALUES
 		'''
 		try:
-			dbm.update_candle(timeframe_id, {'price_averaged_volume' : priced_averaged_volume})
-			dbm.update_candle(timeframe_id, {'current_highest_' + str(lookback_value) : current_highest})
-			dbm.update_candle(timeframe_id, {'current_lowest_' + str(lookback_value) : current_lowest})
-			dbm.update_candle(timeframe_id, {'previous_highest_' + str(lookback_value) : previous_highest})
-			dbm.update_candle(timeframe_id, {'previous_lowest_' + str(lookback_value) : previous_lowest})
-			dbm.update_candle(timeframe_id, {'volume_sum_high' + str(lookback_value) : volume_sum_high})
-			dbm.update_candle(timeframe_id, {'volume_sum_low' + str(lookback_value) : volume_sum_low})
-			dbm.update_candle(timeframe_id, {'price_averaged_volume_sum_high' + str(lookback_value) : price_averaged_volume_sum_high})
-			dbm.update_candle(timeframe_id, {'price_averaged_volume_sum_low' + str(lookback_value) : price_averaged_volume_sum_low})
-			dbm.update_candle(timeframe_id, {'anchored_vwap' + str(lookback_value) : vwap_value})
-			dbm.update_candle(timeframe_id, {'position_from_vwap' + str(lookback_value) : position_from_vwap})
+			dbm.update_candle(timeframe_id, current_candle['symbol'], {'price_averaged_volume' : priced_averaged_volume})
+			dbm.update_candle(timeframe_id, current_candle['symbol'], {'current_highest_' + str(lookback_value) : current_highest})
+			dbm.update_candle(timeframe_id, current_candle['symbol'], {'current_lowest_' + str(lookback_value) : current_lowest})
+			dbm.update_candle(timeframe_id, current_candle['symbol'], {'previous_highest_' + str(lookback_value) : previous_highest})
+			dbm.update_candle(timeframe_id, current_candle['symbol'], {'previous_lowest_' + str(lookback_value) : previous_lowest})
+			dbm.update_candle(timeframe_id, current_candle['symbol'], {'volume_sum_high' + str(lookback_value) : volume_sum_high})
+			dbm.update_candle(timeframe_id, current_candle['symbol'], {'volume_sum_low' + str(lookback_value) : volume_sum_low})
+			dbm.update_candle(timeframe_id, current_candle['symbol'], {'price_averaged_volume_sum_high' + str(lookback_value) : price_averaged_volume_sum_high})
+			dbm.update_candle(timeframe_id, current_candle['symbol'], {'price_averaged_volume_sum_low' + str(lookback_value) : price_averaged_volume_sum_low})
+			dbm.update_candle(timeframe_id, current_candle['symbol'], {'anchored_vwap' + str(lookback_value) : vwap_value})
+			dbm.update_candle(timeframe_id, current_candle['symbol'], {'position_from_vwap' + str(lookback_value) : position_from_vwap})
 
 		except Exception as exception_e:
 			print("Unable to update values needed for anchored vwaps for %s timeframe " % timeframe_id)
 			print(exception_e)
+
+		print('\033[' + console_color + 'm' + '>> ' + str(current_candle["symbol"]) + ' \'s Anchored VWAPS for ' + str(lookback_value) +' period on a ' + str(timeframe_id) +' timeframe added.' + '\033[0m')
 
 	return anchored_vwap_values
 

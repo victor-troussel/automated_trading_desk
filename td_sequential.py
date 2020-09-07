@@ -11,8 +11,7 @@ def get_td_sequential(timeframe_id, candle_array):
             TD Sequential values are inserted
     '''
     try:
-        print("Parsing candles to compute TD sequential on a %s timeframe." % timeframe_id)
-        previous_candles = dbm.get_previous_candles(timeframe_id, 600)
+        previous_candles = dbm.get_previous_candles(timeframe_id, 600, candle_array[0]["symbol"])
 
         try:
             previous_td = previous_candles[1]['TD']
@@ -43,12 +42,12 @@ def get_td_sequential(timeframe_id, candle_array):
         td_up = td_value - interm_td
         td_down = ts_value - interm_ts
 
-        dbm.update_candle(timeframe_id, {'td_up' : td_up})
-        dbm.update_candle(timeframe_id, {'td_down' : td_down})
-        dbm.update_candle(timeframe_id, {'TD' : td_value})
-        dbm.update_candle(timeframe_id, {'TS' : ts_value})
+        dbm.update_candle(timeframe_id, candle_array[0]['symbol'], {'td_up' : td_up})
+        dbm.update_candle(timeframe_id, candle_array[0]['symbol'], {'td_down' : td_down})
+        dbm.update_candle(timeframe_id, candle_array[0]['symbol'], {'TD' : td_value})
+        dbm.update_candle(timeframe_id, candle_array[0]['symbol'], {'TS' : ts_value})
 
-        print(">>> TD sequential added for %s tf." % timeframe_id)
+        print('\033[36m' + '>> ' + str(candle_array[0]["symbol"]) + ' \'s TD sequential added for ' + timeframe_id + ' tf. \033[0m')
 
     except Exception as exception_e:
         print(exception_e)

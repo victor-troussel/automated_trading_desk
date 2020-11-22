@@ -1,8 +1,8 @@
 import hmac, json, requests, time
 from requests import Request
 
-FTX_API_KEY = "I82URa0CXtNoRAZw3qpl1U3Erhu2P0k_XtKykBo2"
-FTX_API_SECRET = "PvRXtFwcoLOGcH-fzlkK7C8_4ErKk9owgu3moZxq"
+FTX_API_KEY = "REDACTED"
+FTX_API_SECRET = "REDACTED"
 
 FTX_AVAILABLE_TIMEFRAMES = ["15m", "1h"]
 FTX_WATCH_LIST = ["AAVE-PERP", "DEFI-PERP", "BNB-PERP", "AVAX-PERP", "THETA-PERP", "EOS-PERP", "XTZ-PERP", "TOMO-PERP",\

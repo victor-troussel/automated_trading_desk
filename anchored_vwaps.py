@@ -86,86 +86,86 @@ def get_anch_vwap_value(timeframe_id, candle_array, lookback_values):
 			an array containing the value of every anchored vwap
 	'''
 	anchored_vwap_values = []
-	console_color = "31"
+	console_color = "33"
 
 	for lookback_value in lookback_values:
-
 		current_candle = candle_array[0]
-		current_volume = current_candle['volume']
+		previous_candle = dbm.get_previous_candle(timeframe_id, current_candle['symbol'])
+		if previous_candle is not None and not 'volume_sum_high' + str(lookback_value) in current_candle:
+			current_volume = current_candle['volume']
 
-		priced_averaged_volume = ((current_candle['low'] + current_candle['high'] + current_candle['close']) / 3) * current_volume
-		current_highest = get_highest_price(candle_array[:lookback_value])
-		current_lowest = get_lowest_price(candle_array[:lookback_value])
+			priced_averaged_volume = ((current_candle['low'] + current_candle['high'] + current_candle['close']) / 3) * current_volume
+			current_highest = get_highest_price(candle_array[:lookback_value])
+			current_lowest = get_lowest_price(candle_array[:lookback_value])
 
-		previous_highest = get_highest_price(candle_array[1:lookback_value])
-		previous_lowest = get_lowest_price(candle_array[1:lookback_value])
+			previous_highest = get_highest_price(candle_array[1:lookback_value])
+			previous_lowest = get_lowest_price(candle_array[1:lookback_value])
 
-		is_new_high = previous_highest < current_candle['close'] 
-		is_new_low = previous_lowest > current_candle['close']
+			is_new_high = previous_highest < current_candle['close'] 
+			is_new_low = previous_lowest > current_candle['close']
 
-		'''
-		If previous candle has the data we need -> we use it
-		else : we start from scratch
-		'''
-		try:
-			previous_candle = dbm.get_previous_candle(timeframe_id, current_candle['symbol'])
-			if not previous_candle['volume_sum_high' + str(lookback_value)]:
+			'''
+			If previous candle has the data we need -> we use it
+			else : we start from scratch
+			'''
+			try:
+				if not previous_candle['volume_sum_high' + str(lookback_value)]:
+					previous_candle = candle_array[1]
+					previous_candle['volume_sum_high' + str(lookback_value)] = previous_candle['volume']
+					previous_candle['price_averaged_volume_sum_high' + str(lookback_value)] = (previous_candle['low'] + previous_candle['high'] +previous_candle['close']) / 3 * previous_candle['volume']
+					previous_candle['volume_sum_low' + str(lookback_value)] = previous_candle['volume']
+					previous_candle['price_averaged_volume_sum_low' + str(lookback_value)] = (previous_candle['low'] + previous_candle['high'] +previous_candle['close']) / 3 * previous_candle['volume']
+			except:
 				previous_candle = candle_array[1]
 				previous_candle['volume_sum_high' + str(lookback_value)] = previous_candle['volume']
 				previous_candle['price_averaged_volume_sum_high' + str(lookback_value)] = (previous_candle['low'] + previous_candle['high'] +previous_candle['close']) / 3 * previous_candle['volume']
 				previous_candle['volume_sum_low' + str(lookback_value)] = previous_candle['volume']
 				previous_candle['price_averaged_volume_sum_low' + str(lookback_value)] = (previous_candle['low'] + previous_candle['high'] +previous_candle['close']) / 3 * previous_candle['volume']
-		except:
-			previous_candle = candle_array[1]
-			previous_candle['volume_sum_high' + str(lookback_value)] = previous_candle['volume']
-			previous_candle['price_averaged_volume_sum_high' + str(lookback_value)] = (previous_candle['low'] + previous_candle['high'] +previous_candle['close']) / 3 * previous_candle['volume']
-			previous_candle['volume_sum_low' + str(lookback_value)] = previous_candle['volume']
-			previous_candle['price_averaged_volume_sum_low' + str(lookback_value)] = (previous_candle['low'] + previous_candle['high'] +previous_candle['close']) / 3 * previous_candle['volume']
 
-		volume_sum_high = current_volume if is_new_high else previous_candle['volume_sum_high' + str(lookback_value)] + current_volume
-		price_averaged_volume_sum_high = priced_averaged_volume if is_new_high else previous_candle['price_averaged_volume_sum_high' + str(lookback_value)] + priced_averaged_volume
+			volume_sum_high = current_volume if is_new_high else previous_candle['volume_sum_high' + str(lookback_value)] + current_volume
+			price_averaged_volume_sum_high = priced_averaged_volume if is_new_high else previous_candle['price_averaged_volume_sum_high' + str(lookback_value)] + priced_averaged_volume
 
-		volume_sum_low = current_volume if is_new_low else previous_candle['volume_sum_low' + str(lookback_value)] + current_volume
-		price_averaged_volume_sum_low = priced_averaged_volume if is_new_low else previous_candle['price_averaged_volume_sum_low' + str(lookback_value)] + priced_averaged_volume
+			volume_sum_low = current_volume if is_new_low else previous_candle['volume_sum_low' + str(lookback_value)] + current_volume
+			price_averaged_volume_sum_low = priced_averaged_volume if is_new_low else previous_candle['price_averaged_volume_sum_low' + str(lookback_value)] + priced_averaged_volume
 
-		vwap_high = price_averaged_volume_sum_high / volume_sum_high 
-		vwap_low = price_averaged_volume_sum_low / volume_sum_low
+			vwap_high = price_averaged_volume_sum_high / volume_sum_high 
+			vwap_low = price_averaged_volume_sum_low / volume_sum_low
 
 
-		ema_high = get_ema(timeframe_id, 'HIGH', candle_array[:lookback_value])
-		ema_low = get_ema(timeframe_id, 'LOW', candle_array[:lookback_value])
+			ema_high = get_ema(timeframe_id, 'HIGH', candle_array[:lookback_value])
+			ema_low = get_ema(timeframe_id, 'LOW', candle_array[:lookback_value])
 
 
-		vwap_high += ema_high
-		vwap_low += ema_low
+			vwap_high += ema_high
+			vwap_low += ema_low
 
-		vwap_high = vwap_high / 2
-		vwap_low = vwap_low /2
+			vwap_high = vwap_high / 2
+			vwap_low = vwap_low /2
 
-		vwap_value = (vwap_high + vwap_low) / 2 
+			vwap_value = (vwap_high + vwap_low) / 2 
 
-		anchored_vwap_values.append(vwap_value)
-		position_from_vwap = "ABOVE" if current_candle["close"] > vwap_value else "BELOW"
+			anchored_vwap_values.append(vwap_value)
+			position_from_vwap = "ABOVE" if current_candle["close"] > vwap_value else "BELOW"
 
-		'''
-		INSERTING ANCHORED_VWAPS RELATED VALUES
-		'''
-		try:
-			dbm.update_candle(timeframe_id, current_candle['symbol'], {'price_averaged_volume' : priced_averaged_volume})
-			dbm.update_candle(timeframe_id, current_candle['symbol'], {'current_highest_' + str(lookback_value) : current_highest})
-			dbm.update_candle(timeframe_id, current_candle['symbol'], {'current_lowest_' + str(lookback_value) : current_lowest})
-			dbm.update_candle(timeframe_id, current_candle['symbol'], {'previous_highest_' + str(lookback_value) : previous_highest})
-			dbm.update_candle(timeframe_id, current_candle['symbol'], {'previous_lowest_' + str(lookback_value) : previous_lowest})
-			dbm.update_candle(timeframe_id, current_candle['symbol'], {'volume_sum_high' + str(lookback_value) : volume_sum_high})
-			dbm.update_candle(timeframe_id, current_candle['symbol'], {'volume_sum_low' + str(lookback_value) : volume_sum_low})
-			dbm.update_candle(timeframe_id, current_candle['symbol'], {'price_averaged_volume_sum_high' + str(lookback_value) : price_averaged_volume_sum_high})
-			dbm.update_candle(timeframe_id, current_candle['symbol'], {'price_averaged_volume_sum_low' + str(lookback_value) : price_averaged_volume_sum_low})
-			dbm.update_candle(timeframe_id, current_candle['symbol'], {'anchored_vwap' + str(lookback_value) : vwap_value})
-			dbm.update_candle(timeframe_id, current_candle['symbol'], {'position_from_vwap' + str(lookback_value) : position_from_vwap})
+			'''
+			INSERTING ANCHORED_VWAPS RELATED VALUES
+			'''
+			try:
+				dbm.update_candle(timeframe_id, current_candle['symbol'], {'priced_averaged_volume' : priced_averaged_volume,\
+																		'current_highest_' + str(lookback_value) : current_highest, \
+																		'current_lowest_' + str(lookback_value) : current_lowest, \
+																		'previous_highest_' + str(lookback_value) : previous_highest, \
+																		'previous_lowest_' + str(lookback_value) : previous_lowest, \
+																		'volume_sum_high' + str(lookback_value) : volume_sum_high, \
+																		'price_averaged_volume_sum_high' + str(lookback_value) : price_averaged_volume_sum_high,\
+																		'price_averaged_volume_sum_low' + str(lookback_value) : price_averaged_volume_sum_low,\
+																		'volume_sum_low' + str(lookback_value) : volume_sum_low, \
+																		'anchored_vwap' + str(lookback_value) : vwap_value,\
+																		'position_from_vwap' + str(lookback_value) : position_from_vwap	})
 
-		except Exception as exception_e:
-			print("Unable to update values needed for anchored vwaps for %s timeframe " % timeframe_id)
-			print(exception_e)
+			except Exception as exception_e:
+				print("Unable to update values needed for anchored vwaps for %s timeframe " % timeframe_id)
+				print(exception_e)
 
 		print('\033[' + console_color + 'm' + '>> ' + str(current_candle["symbol"]) + ' \'s Anchored VWAPS for ' + str(lookback_value) +' period on a ' + str(timeframe_id) +' timeframe added.' + '\033[0m')
 

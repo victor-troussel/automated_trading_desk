@@ -4,28 +4,34 @@ from requests import Request
 FTX_API_KEY = "I82URa0CXtNoRAZw3qpl1U3Erhu2P0k_XtKykBo2"
 FTX_API_SECRET = "PvRXtFwcoLOGcH-fzlkK7C8_4ErKk9owgu3moZxq"
 
-FTX_AVAILABLE_TIMEFRAMES = ["15m", "1h", "4h", "1d"]
-FTX_WATCH_LIST = ["TRX-PERP", "OKB-PERP", "LINK-PERP", "AMPL-PERP", "DEFI-PERP", "ALGO-PERP", "SOL-PERP", "DOT-PERP"]
-
-def connect_ftx():
-    return requests.Session()
+FTX_AVAILABLE_TIMEFRAMES = ["15m", "1h"]
+FTX_WATCH_LIST = ["AAVE-PERP", "DEFI-PERP", "BNB-PERP", "AVAX-PERP", "THETA-PERP", "EOS-PERP", "XTZ-PERP", "TOMO-PERP",\
+                  "ADA-PERP", "LINK-PERP", "SUSHI-PERP", "MID-PERP", "SHIT-PERP", "DRGN-PERP", "BTC-PERP", "OMG-PERP",\
+                  "DOT-PERP", "ALGO-PERP", "YFI-PERP", "ATOM-PERP"]
 
 
 def get_ticker_info(symbol_id, timeframe_id):
-    requests_session = connect_ftx()
+    """
+    Returns candles array for a given symbol_id / timeframe_id couple.
+    INPUT : symbol_id, timeframe_id.  
+    OUTPUT : an array of 700 candles related to a symbol_id / timeframe_id couple.  
+    """
+    requests_session = requests.Session()
 
     if timeframe_id == "15m":
-    	tf_sec = 15 * 60
+        tf_sec = 15 * 60
     elif timeframe_id == "1h":
-    	tf_sec = 60 * 60
+        tf_sec = 60 * 60
     elif timeframe_id == "4h":
-    	tf_sec = 60 * 60 * 4
+        tf_sec = 60 * 60 * 4
     elif timeframe_id == "1d":
-    	tf_sec = 60 * 60 * 24
+        tf_sec = 60 * 60 * 24
 
 
     ts = int(time.time() * 1000)
+
     request = Request('GET', 'https://ftx.com/api/markets/' + symbol_id + '/candles?resolution=' + str(tf_sec)  + '&limit=700')
+    
     prepared = request.prepare()
     signature_payload = f'{ts}{prepared.method}{prepared.path_url}'.encode()
     signature = hmac.new(FTX_API_SECRET.encode(), signature_payload, 'sha256').hexdigest()
